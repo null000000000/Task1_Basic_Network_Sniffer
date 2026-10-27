@@ -1,40 +1,57 @@
-# CodeAlpha_BasicNetworkSniffer
+Task 1: Basic Network Sniffer
 
-Task 1 - Cyber Security Internship (CodeAlpha): a basic network sniffer in Python using `scapy`.
+CodeAlpha Cyber Security Internship, Task 1. A Python network sniffer built with `scapy` that captures live packets and shows how data moves through a network.
 
-## Features
-- Captures live packets (IPv4/IPv6) and shows source/destination IPs, protocol (TCP/UDP/ICMP), ports, TCP flags, and DNS queries
-- Payload preview in text and hex
-- BPF filters, packet count, interface selection
-- Protocol summary at the end, optional `.pcap` export for Wireshark
+## What it does
 
-## Install
-```
-pip install -r requirements.txt
-```
-Windows: install Npcap (https://npcap.com) and run the terminal as Administrator.
-Linux/macOS: run with `sudo`.
+- Captures live IPv4/IPv6 traffic
+- Shows time, source/destination IP, protocol (TCP / UDP / ICMP) and packet size
+- Shows source/destination ports and TCP flags
+- Shows ICMP type/code and DNS queries
+- Shows a payload preview as text and hex
+- Supports BPF filters, packet count, interface selection, payload length, and `.pcap` export
+- Prints a protocol summary when the capture ends
+
+## Requirements
+
+- Python 3
+- `scapy` (`pip install -r requirements.txt`)
+- Root/Administrator rights (Npcap on Windows)
 
 ## Usage
+
+bash
+
+```bash
+sudo python3 snifer.py                         # capture 20 packets
+sudo python3 snifer.py -c 50 -f "tcp port 80"  # only HTTP traffic
+sudo python3 snifer.py -f "udp port 53"        # only DNS
+sudo python3 snifer.py -c 100 -w capture.pcap  # save to a pcap file
 ```
-sudo python3 sniffer.py                       # 20 packets
-sudo python3 sniffer.py -c 50 -f "tcp port 80"
-sudo python3 sniffer.py -f "udp port 53" --no-payload
-sudo python3 sniffer.py -c 100 -w capture.pcap
-```
+
+Options: `-i` interface, `-c` count (0 = until Ctrl+C), `-f` BPF filter, `-p` payload length, `--no-payload`, `-w` pcap output.
 
 ## How it works
-1. `sniff()` listens on the interface and calls a handler for every packet.
-2. The handler reads the IP layer, then the TCP/UDP/ICMP layer above it (encapsulation: Ethernet > IP > TCP/UDP > data).
-3. If a `Raw` layer exists, its bytes are shown as the payload. Encrypted traffic (HTTPS) shows unreadable payloads, while plain HTTP/DNS are readable.
+
+1. `sniff()` listens on the network interface and calls `handle_packet()` for every packet.
+2. The handler reads the IP layer, then the layer above it (TCP, UDP or ICMP), following the encapsulation order: Ethernet > IP > TCP/UDP > data.
+3. If the packet carries a `Raw` layer, its bytes are printed as readable text and hex.
+4. Counters per protocol are kept and printed as a summary at the end.
+
+## Testing (lab environment)
+
+Testing was done on **Kali Linux inside VirtualBox**, on a lab network I own.
+
+1. **Host discovery** with `nmap -sn` to see which hosts were alive on the lab subnet (3 hosts up).
+2. **Live capture** with `sudo ./snifer.py`. The sniffer caught a UDP packet (86 bytes, port 57621 to 57621) and printed its source/destination, ports and payload in text and hex. The payload starts with `SpotUdp`, which matches the local peer-discovery broadcast used by Spotify.
 
 ## Protocol basics learned
-- **TCP**: connection-oriented (SYN, SYN-ACK, ACK handshake), used by HTTP/HTTPS/SSH
-- **UDP**: connectionless and fast, used by DNS/streaming
+
+- **TCP**: connection-oriented (SYN, SYN-ACK, ACK), used by HTTP, HTTPS, SSH
+- **UDP**: connectionless and fast, used by DNS and streaming
 - **ICMP**: diagnostics such as ping
+- Encrypted traffic (HTTPS) shows unreadable payloads, while plain protocols such as HTTP and DNS are readable.
 
 ## Legal note
-Capture traffic only on networks you own or are authorized to test.
 
-## Screenshots
-Add your run screenshots to the `screenshots/` folder and reference them here, e.g. `![Sniffer output](screenshots/run1.png)`.
+Use only on networks you own or have written permission to monitor.
